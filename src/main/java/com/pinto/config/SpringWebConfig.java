@@ -13,7 +13,7 @@ import org.thymeleaf.templatemode.TemplateMode;
 
 @EnableWebMvc
 @Configuration
-@ComponentScan({"com.pinto.presentacion", "com.pinto.dominio", "com.pinto.infraestructura"})
+@ComponentScan({ "com.pinto.presentacion" })
 public class SpringWebConfig implements WebMvcConfigurer {
 
     @Override

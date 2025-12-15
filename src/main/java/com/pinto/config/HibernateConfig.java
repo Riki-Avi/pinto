@@ -1,6 +1,7 @@
 package com.pinto.config;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.hibernate5.HibernateTransactionManager;
@@ -12,6 +13,7 @@ import java.util.Properties;
 
 @Configuration
 @EnableTransactionManagement
+@ComponentScan({ "com.pinto.dominio", "com.pinto.infraestructura" })
 public class HibernateConfig {
 
     @Bean
