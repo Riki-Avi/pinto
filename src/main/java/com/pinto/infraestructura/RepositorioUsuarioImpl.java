@@ -27,6 +27,7 @@ public class RepositorioUsuarioImpl implements RepositorioUsuario {
         return usuario;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     @Transactional
     public Usuario buscarUsuarioPorUsername(String username) {

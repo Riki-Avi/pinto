@@ -5,12 +5,447 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pinto - Juego de Dibujo Online</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        #container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #estado {
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        #estado.conectado {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        #estado.desconectado {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        #controles {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: 500;
+            color: #555;
+        }
+
+        #canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: crosshair;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        #btnBorrar {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        #btnBorrar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4);
+        }
+
+        /* Historial de colores */
+        #coloresRecientes {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .colorReciente {
+            width: 28px;
+            height: 28px;
+            border: 3px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .colorReciente:hover {
+            transform: scale(1.15);
+            border-color: #999;
+        }
+
+        .colorReciente.activo {
+            border-color: #3498db;
+            box-shadow: 0 0 8px #3498db;
+        }
+
+        #jugadoresOnline {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 8px;
+            text-align: center;
+        }
+    </style>
 </head>
 
 <body>
     <div id="container">
-        <h1>Bienvenido</h1>
+        <h1>🎨 Pinto - Dibujá Online</h1>
+
+        <div id="estado" class="desconectado">⏳ Conectando como <span th:text="${username}"></span>...</div>
+
+        <div id="controles">
+            <div class="control-group">
+                <label>Grosor:</label>
+                <input type="range" id="grosor" min="1" max="30" value="5">
+                <span id="valorGrosor">5</span>
+            </div>
+
+            <div class="control-group">
+                <label>Color:</label>
+                <input type="color" id="color" value="#000000">
+            </div>
+
+            <div class="control-group">
+                <label>Recientes:</label>
+                <div id="coloresRecientes"></div>
+            </div>
+
+            <button id="btnBorrar">🗑️ Borrar todo</button>
+        </div>
+
+        <canvas id="canvas" width="850" height="500" style="background: white;"></canvas>
+
+        <div id="jugadoresOnline">
+            👥 Dibujando en tiempo real con otros jugadores
+        </div>
     </div>
+
+    <!-- SockJS y STOMP para WebSocket -->
+    <script th:src="@{/webjars/sockjs-client/1.5.1/sockjs.min.js}"></script>
+    <script th:src="@{/webjars/stomp-websocket/2.3.3/stomp.min.js}"></script>
+
+    <script th:inline="javascript">
+        // =====================
+        // CONFIGURACIÓN CANVAS
+        // =====================
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const inputGrosor = document.getElementById('grosor');
+        const spanGrosor = document.getElementById('valorGrosor');
+        const inputColor = document.getElementById('color');
+        const btnBorrar = document.getElementById('btnBorrar');
+        const coloresRecientesDiv = document.getElementById('coloresRecientes');
+        const estadoDiv = document.getElementById('estado');
+
+        let dibujando = false;
+        let coloresRecientes = [];
+        const MAX_COLORES_RECIENTES = 8;
+        let stompClient = null;
+        let miNombre = /*[[${username}]]*/ 'Jugador';
+
+        // =====================
+        // WEBSOCKET
+        // =====================
+        function conectarWebSocket() {
+            const socket = new SockJS('/pinto/pinto-websocket');
+            stompClient = Stomp.over(socket);
+
+            // Desactivar logs de debug de STOMP
+            stompClient.debug = null;
+
+            stompClient.connect({}, function (frame) {
+                console.log('Conectado: ' + frame);
+                estadoDiv.innerHTML = '✅ Conectado como <strong>' + miNombre + '</strong> - ¡Dibujá!';
+                estadoDiv.className = 'conectado';
+
+                // Suscribirse al canal de trazos
+                stompClient.subscribe('/topic/trazos', function (mensaje) {
+                    const trazo = JSON.parse(mensaje.body);
+
+                    // Solo dibujar si es de otro jugador
+                    if (trazo.jugador !== miNombre) {
+                        procesarTrazoRecibido(trazo);
+                    }
+                });
+            }, function (error) {
+                console.error('Error WebSocket:', error);
+                estadoDiv.textContent = '❌ Desconectado - Reintentando...';
+                estadoDiv.className = 'desconectado';
+
+                // Reintentar conexión
+                setTimeout(conectarWebSocket, 3000);
+            });
+        }
+
+        // Estado de trazos remotos por jugador
+        let trazosRemotos = {};
+
+        // Procesar trazo recibido de otro jugador
+        function procesarTrazoRecibido(trazo) {
+            console.log('Trazo recibido:', trazo); // Debug
+
+            if (trazo.tipo === 'borrar') {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+
+            // Guardar/obtener estado del jugador remoto
+            if (!trazosRemotos[trazo.jugador]) {
+                trazosRemotos[trazo.jugador] = { x: 0, y: 0 };
+            }
+
+            if (trazo.tipo === 'inicio') {
+                // Solo guardar posición inicial
+                trazosRemotos[trazo.jugador] = { x: trazo.x, y: trazo.y };
+            } else if (trazo.tipo === 'dibujo') {
+                // Dibujar línea desde la última posición hasta la nueva
+                ctx.save();
+                ctx.strokeStyle = trazo.color;
+                ctx.lineWidth = trazo.grosor;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(trazosRemotos[trazo.jugador].x, trazosRemotos[trazo.jugador].y);
+                ctx.lineTo(trazo.x, trazo.y);
+                ctx.stroke();
+                ctx.restore();
+
+                // Actualizar última posición
+                trazosRemotos[trazo.jugador] = { x: trazo.x, y: trazo.y };
+            }
+        }
+
+        // Enviar trazo al servidor
+        function enviarTrazo(tipo, x, y) {
+            console.log('Intentando enviar trazo:', tipo, x, y, 'Conectado:', stompClient && stompClient.connected);
+            if (stompClient && stompClient.connected) {
+                const trazo = {
+                    tipo: tipo,
+                    x: x,
+                    y: y,
+                    color: inputColor.value,
+                    grosor: parseInt(inputGrosor.value),
+                    jugador: miNombre
+                };
+                console.log('Enviando trazo:', trazo);
+                stompClient.send('/app/dibujar', {}, JSON.stringify(trazo));
+            } else {
+                console.log('No conectado, no se puede enviar');
+            }
+        }
+
+        // =====================
+        // EVENTOS DEL CANVAS - MOUSE
+        // =====================
+        canvas.addEventListener('mousedown', (e) => {
+            dibujando = true;
+            ctx.lineWidth = inputGrosor.value;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = inputColor.value;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+
+            enviarTrazo('inicio', e.offsetX, e.offsetY);
+            agregarColorReciente(inputColor.value);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (dibujando) {
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(e.offsetX, e.offsetY);
+
+                enviarTrazo('dibujo', e.offsetX, e.offsetY);
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            dibujando = false;
+            enviarTrazo('fin', 0, 0);
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            dibujando = false;
+        });
+
+        // =====================
+        // EVENTOS DEL CANVAS - TOUCH (CELULARES)
+        // =====================
+        function getTouchPos(touch) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
+            };
+        }
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const pos = getTouchPos(touch);
+
+            dibujando = true;
+            ctx.lineWidth = inputGrosor.value;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = inputColor.value;
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+
+            enviarTrazo('inicio', pos.x, pos.y);
+            agregarColorReciente(inputColor.value);
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (dibujando) {
+                const touch = e.touches[0];
+                const pos = getTouchPos(touch);
+
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+
+                enviarTrazo('dibujo', pos.x, pos.y);
+            }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            dibujando = false;
+            enviarTrazo('fin', 0, 0);
+        });
+
+        canvas.addEventListener('touchcancel', () => {
+            dibujando = false;
+        });
+
+        // =====================
+        // CONTROLES
+        // =====================
+        inputGrosor.addEventListener('input', () => {
+            spanGrosor.textContent = inputGrosor.value;
+        });
+
+        btnBorrar.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Notificar a otros jugadores
+            if (stompClient && stompClient.connected) {
+                const mensaje = { tipo: 'borrar', jugador: miNombre };
+                stompClient.send('/app/borrar', {}, JSON.stringify(mensaje));
+            }
+        });
+
+        inputColor.addEventListener('change', () => {
+            agregarColorReciente(inputColor.value);
+        });
+
+        // =====================
+        // COLORES RECIENTES
+        // =====================
+        function agregarColorReciente(color) {
+            const index = coloresRecientes.indexOf(color);
+            if (index > -1) {
+                coloresRecientes.splice(index, 1);
+            }
+            coloresRecientes.unshift(color);
+            if (coloresRecientes.length > MAX_COLORES_RECIENTES) {
+                coloresRecientes.pop();
+            }
+            actualizarColoresRecientes();
+        }
+
+        function actualizarColoresRecientes() {
+            coloresRecientesDiv.innerHTML = '';
+            coloresRecientes.forEach(color => {
+                const div = document.createElement('div');
+                div.className = 'colorReciente';
+                div.style.backgroundColor = color;
+                div.title = color;
+                div.addEventListener('click', () => {
+                    inputColor.value = color;
+                    marcarColorActivo(color);
+                });
+                coloresRecientesDiv.appendChild(div);
+            });
+            marcarColorActivo(inputColor.value);
+        }
+
+        function marcarColorActivo(color) {
+            document.querySelectorAll('.colorReciente').forEach(div => {
+                const bgColor = div.style.backgroundColor;
+                if (rgbToHex(bgColor) === color.toLowerCase()) {
+                    div.classList.add('activo');
+                } else {
+                    div.classList.remove('activo');
+                }
+            });
+        }
+
+        function rgbToHex(rgb) {
+            if (rgb.startsWith('#')) return rgb;
+            const result = rgb.match(/\d+/g);
+            if (!result) return rgb;
+            return '#' + result.map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+        }
+
+        // =====================
+        // INICIAR
+        // =====================
+        conectarWebSocket();
+    </script>
 </body>
 
 </html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinto - Juego de Dibujo Online</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        #container {
+            max-width: 850px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        canvas:hover {
+            cursor: crosshair;
+        }
+
+        #controles {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #btnBorrar {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        #btnBorrar:hover {
+            background-color: #c0392b;
+        }
+
+        /* Historial de colores */
+        #coloresRecientes {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .colorReciente {
+            width: 25px;
+            height: 25px;
+            border: 2px solid #333;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .colorReciente:hover {
+            transform: scale(1.2);
+        }
+
+        .colorReciente.activo {
+            border-color: #3498db;
+            box-shadow: 0 0 5px #3498db;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <h1>🎨 Pinto - Dibujá</h1>
+        <div id="controles">
+            <div class="control-group">
+                <label>Grosor:</label>
+                <input type="range" id="grosor" min="1" max="30" value="5">
+                <span id="valorGrosor">5</span>
+            </div>
+
+            <div class="control-group">
+                <label>Color:</label>
+                <input type="color" id="color" value="#000000">
+            </div>
+
+            <div class="control-group">
+                <label>Recientes:</label>
+                <div id="coloresRecientes"></div>
+            </div>
+
+            <button id="btnBorrar">🗑️ Borrar todo</button>
+        </div>
+        <canvas id="canvas" width="800" height="500" style="background: white;"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const inputGrosor = document.getElementById('grosor');
+        const spanGrosor = document.getElementById('valorGrosor');
+        const inputColor = document.getElementById('color');
+        const btnBorrar = document.getElementById('btnBorrar');
+        const coloresRecientesDiv = document.getElementById('coloresRecientes');
+
+        let dibujando = false;
+        let coloresRecientes = [];
+        const MAX_COLORES_RECIENTES = 8;
+
+        // Actualizar el texto del grosor
+        inputGrosor.addEventListener('input', () => {
+            spanGrosor.textContent = inputGrosor.value;
+        });
+
+        // Agregar color al historial
+        function agregarColorReciente(color) {
+            // Si ya existe, lo movemos al principio
+            const index = coloresRecientes.indexOf(color);
+            if (index > -1) {
+                coloresRecientes.splice(index, 1);
+            }
+
+            // Agregar al principio
+            coloresRecientes.unshift(color);
+
+            // Limitar cantidad
+            if (coloresRecientes.length > MAX_COLORES_RECIENTES) {
+                coloresRecientes.pop();
+            }
+
+            actualizarColoresRecientes();
+        }
+
+        // Actualizar la visualización de colores recientes
+        function actualizarColoresRecientes() {
+            coloresRecientesDiv.innerHTML = '';
+
+            coloresRecientes.forEach(color => {
+                const div = document.createElement('div');
+                div.className = 'colorReciente';
+                div.style.backgroundColor = color;
+                div.title = color;
+
+                // Al hacer click, seleccionar ese color
+                div.addEventListener('click', () => {
+                    inputColor.value = color;
+                    marcarColorActivo(color);
+                });
+
+                coloresRecientesDiv.appendChild(div);
+            });
+
+            marcarColorActivo(inputColor.value);
+        }
+
+        // Marcar visualmente el color activo
+        function marcarColorActivo(color) {
+            document.querySelectorAll('.colorReciente').forEach(div => {
+                if (div.style.backgroundColor === color ||
+                    rgbToHex(div.style.backgroundColor) === color.toLowerCase()) {
+                    div.classList.add('activo');
+                } else {
+                    div.classList.remove('activo');
+                }
+            });
+        }
+
+        // Convertir rgb a hex para comparar
+        function rgbToHex(rgb) {
+            if (rgb.startsWith('#')) return rgb;
+            const result = rgb.match(/\d+/g);
+            if (!result) return rgb;
+            return '#' + result.map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+        }
+
+        // Eventos del canvas
+        canvas.addEventListener('mousedown', (e) => {
+            dibujando = true;
+            ctx.lineWidth = inputGrosor.value;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = inputColor.value;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+
+            // Agregar color al historial
+            agregarColorReciente(inputColor.value);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (dibujando) {
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            dibujando = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            dibujando = false;
+        });
+
+        // Borrar canvas
+        btnBorrar.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
+        // Cuando cambia el color en el picker, agregarlo a recientes
+        inputColor.addEventListener('change', () => {
+            agregarColorReciente(inputColor.value);
+        });
+    </script>
+</body>
+
+</html>

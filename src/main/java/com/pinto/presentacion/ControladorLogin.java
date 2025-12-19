@@ -10,6 +10,8 @@ import org.springframework.web.servlet.ModelAndView;
 import com.pinto.dominio.Usuario;
 import com.pinto.dominio.ServicioUsuario;
 
+import javax.servlet.http.HttpSession;
+
 @Controller
 public class ControladorLogin {
 
@@ -44,31 +46,40 @@ public class ControladorLogin {
     @PostMapping("/login")
     public ModelAndView login(
             @RequestParam(required = true) String username,
-            @RequestParam(required = true) String password) {
+            @RequestParam(required = true) String password,
+            HttpSession session) {
 
-        Usuario usuario = new Usuario();
-        usuario.setUsername(username);
-        usuario.setPassword(password);
+        Usuario usuarioEncontrado = servicioUsuario.buscarUsuarioPorUsername(username);
 
-        Usuario usuarioName = servicioUsuario.buscarUsuarioPorUsername(username);
-
-        if (usuarioName == null) {
+        if (usuarioEncontrado == null) {
             ModelAndView mav = new ModelAndView("login");
             mav.addObject("error", "Usuario no encontrado");
             return mav;
         }
 
-        if (!usuarioName.getPassword().equals(password)) {
+        if (!usuarioEncontrado.getPassword().equals(password)) {
             ModelAndView mav = new ModelAndView("login");
             mav.addObject("error", "Contraseña incorrecta");
             return mav;
         }
 
+        // Guardar usuario en sesión
+        session.setAttribute("usuario", usuarioEncontrado);
+
         return new ModelAndView("redirect:/home");
     }
 
     @GetMapping("/home")
-    public ModelAndView home() {
-        return new ModelAndView("home");
+    public ModelAndView home(HttpSession session) {
+        Usuario usuario = (Usuario) session.getAttribute("usuario");
+
+        if (usuario == null) {
+            // Si no hay usuario en sesión, redirigir al login
+            return new ModelAndView("redirect:/");
+        }
+
+        ModelAndView mav = new ModelAndView("home");
+        mav.addObject("username", usuario.getUsername());
+        return mav;
     }
 }
