@@ -14,19 +14,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // Los clientes se suscriben a /topic/...
-        config.enableSimpleBroker("/topic");
+        // Los clientes se suscriben a /topic/... o /queue/...
+        config.enableSimpleBroker("/topic", "/queue");
         // Los mensajes del cliente van a /app/...
         config.setApplicationDestinationPrefixes("/app");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Endpoint WebSocket con SockJS como fallback
-        // setAllowedOriginPatterns("*") permite conexiones desde cualquier origen
-        // (necesario para Railway)
+        // Endpoint WebSocket con SockJS - igual que tallerwebi-grupo3
         registry.addEndpoint("/pinto-websocket")
-                .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
 }

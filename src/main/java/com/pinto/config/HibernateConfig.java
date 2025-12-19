@@ -13,7 +13,7 @@ import java.util.Properties;
 
 @Configuration
 @EnableTransactionManagement
-@ComponentScan({ "com.pinto.dominio", "com.pinto.infraestructura", "com.pinto.config" })
+@ComponentScan({ "com.pinto.dominio", "com.pinto.infraestructura" })
 public class HibernateConfig {
 
     @Bean
