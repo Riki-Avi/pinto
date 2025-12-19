@@ -23,6 +23,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Endpoint WebSocket con SockJS como fallback
-        registry.addEndpoint("/pinto-websocket").withSockJS();
+        // setAllowedOriginPatterns("*") permite conexiones desde cualquier origen
+        // (necesario para Railway)
+        registry.addEndpoint("/pinto-websocket")
+                .setAllowedOriginPatterns("*")
+                .withSockJS();
     }
 }
