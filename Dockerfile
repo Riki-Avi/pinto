@@ -12,7 +12,7 @@ RUN mvn clean package -DskipTests
 FROM jetty:9.4-jre11
 
 # Copiar el WAR al directorio de webapps de Jetty
-COPY --from=build /app/target/pinto.war /var/lib/jetty/webapps/ROOT.war
+COPY --from=build /app/target/*.war /var/lib/jetty/webapps/ROOT.war
 
 # Puerto por defecto de Railway
 ENV PORT=8080
