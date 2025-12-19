@@ -198,7 +198,9 @@
         // WEBSOCKET
         // =====================
         function conectarWebSocket() {
-            const socket = new SockJS('/pinto/pinto-websocket');
+            // URL dinámica que funciona tanto en local como en Railway
+            const wsUrl = /*[[@{/pinto-websocket}]]*/ '/pinto/pinto-websocket';
+            const socket = new SockJS(wsUrl);
             stompClient = Stomp.over(socket);
 
             // Desactivar logs de debug de STOMP
