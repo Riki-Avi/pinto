@@ -22,8 +22,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Endpoint WebSocket con SockJS - igual que tallerwebi-grupo3
+        // Endpoint WebSocket NATIVO (sin SockJS) - mejor compatibilidad con Railway
         registry.addEndpoint("/pinto-websocket")
-                .withSockJS();
+                .setAllowedOrigins("*"); // Permitir CORS desde cualquier origen
     }
 }

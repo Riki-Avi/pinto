@@ -171,8 +171,7 @@
         </div>
     </div>
 
-    <!-- SockJS y STOMP para WebSocket -->
-    <script th:src="@{/webjars/sockjs-client/1.5.1/sockjs.min.js}"></script>
+    <!-- STOMP para WebSocket (sin SockJS - WebSocket nativo) -->
     <script th:src="@{/webjars/stomp-websocket/2.3.3/stomp.min.js}"></script>
 
     <script th:inline="javascript">
@@ -198,9 +197,16 @@
         // WEBSOCKET
         // =====================
         function conectarWebSocket() {
-            // URL dinámica que funciona tanto en local como en Railway
-            const wsUrl = /*[[@{/pinto-websocket}]]*/ '/pinto/pinto-websocket';
-            const socket = new SockJS(wsUrl);
+            // URL dinámica con WebSocket nativo (sin SockJS)
+            // Detecta automáticamente ws:// o wss:// según el protocolo de la página
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+            const contextPath = /*[[@{/}]]*/ '/';
+            const wsUrl = protocol + '//' + host + contextPath + 'pinto-websocket';
+
+            console.log('Conectando a WebSocket:', wsUrl);
+
+            const socket = new WebSocket(wsUrl);
             stompClient = Stomp.over(socket);
 
             // Desactivar logs de debug de STOMP
