@@ -38,8 +38,30 @@
             text-align: center;
             padding: 10px;
             border-radius: 5px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             font-weight: bold;
+        }
+
+        .equipo-badge {
+            text-align: center;
+            padding: 8px 15px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .equipo-rojo {
+            background: linear-gradient(135deg, #ffe0e0, #ffcccc);
+            color: #c0392b;
+            border: 2px solid #e74c3c;
+        }
+
+        .equipo-azul {
+            background: linear-gradient(135deg, #e0e8ff, #ccd9ff);
+            color: #2980b9;
+            border: 2px solid #3498db;
         }
 
         #estado.conectado {
@@ -144,6 +166,10 @@
 
         <div id="estado" class="desconectado">⏳ Conectando como <span th:text="${username}"></span>...</div>
 
+        <div id="equipoInfo" th:class="'equipo-badge equipo-' + ${equipo}">
+            Equipo: <strong th:text="${equipo == 'rojo'} ? '🔴 Rojo' : '🔵 Azul'">Equipo</strong>
+        </div>
+
         <div id="controles">
             <div class="control-group">
                 <label>Grosor:</label>
@@ -192,6 +218,8 @@
         const MAX_COLORES_RECIENTES = 8;
         let stompClient = null;
         let miNombre = /*[[${username}]]*/ 'Jugador';
+        let miEquipo = /*[[${equipo}]]*/ 'rojo';
+        let miSalaId = /*[[${salaId}]]*/ 'ABC123';
 
         // =====================
         // WEBSOCKET
@@ -217,8 +245,8 @@
                 estadoDiv.innerHTML = '✅ Conectado como <strong>' + miNombre + '</strong> - ¡Dibujá!';
                 estadoDiv.className = 'conectado';
 
-                // Suscribirse al canal de trazos
-                stompClient.subscribe('/topic/trazos', function (mensaje) {
+                // Suscribirse al canal de trazos DEL MISMO EQUIPO
+                stompClient.subscribe('/topic/trazos/' + miSalaId + '/' + miEquipo, function (mensaje) {
                     const trazo = JSON.parse(mensaje.body);
 
                     // Solo dibujar si es de otro jugador
@@ -287,7 +315,7 @@
                     jugador: miNombre
                 };
                 console.log('Enviando trazo:', trazo);
-                stompClient.send('/app/dibujar', {}, JSON.stringify(trazo));
+                stompClient.send('/app/dibujar/' + miSalaId + '/' + miEquipo, {}, JSON.stringify(trazo));
             } else {
                 console.log('No conectado, no se puede enviar');
             }
@@ -392,7 +420,7 @@
             // Notificar a otros jugadores
             if (stompClient && stompClient.connected) {
                 const mensaje = { tipo: 'borrar', jugador: miNombre };
-                stompClient.send('/app/borrar', {}, JSON.stringify(mensaje));
+                stompClient.send('/app/borrar/' + miSalaId + '/' + miEquipo, {}, JSON.stringify(mensaje));
             }
         });
 

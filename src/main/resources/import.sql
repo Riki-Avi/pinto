@@ -4,3 +4,5 @@
 INSERT INTO usuario (username, password) VALUES ('usuario1', '123');
 INSERT INTO usuario (username, password) VALUES ('usuario2', '123');
 INSERT INTO usuario (username, password) VALUES ('usuario3', '123');
+INSERT INTO usuario (username, password) VALUES ('usuario4', '123');
+INSERT INTO usuario (username, password) VALUES ('usuario5', '123');

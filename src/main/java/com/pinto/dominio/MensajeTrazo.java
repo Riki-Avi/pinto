@@ -12,6 +12,8 @@ public class MensajeTrazo {
     private String color; // Color del trazo (#RRGGBB)
     private int grosor; // Grosor del pincel
     private String jugador; // Nombre del jugador que dibuja
+    private String equipo; // "rojo" o "azul"
+    private String salaId; // Código de la sala
 
     public MensajeTrazo() {
     }
@@ -72,5 +74,21 @@ public class MensajeTrazo {
 
     public void setJugador(String jugador) {
         this.jugador = jugador;
+    }
+
+    public String getEquipo() {
+        return equipo;
+    }
+
+    public void setEquipo(String equipo) {
+        this.equipo = equipo;
+    }
+
+    public String getSalaId() {
+        return salaId;
+    }
+
+    public void setSalaId(String salaId) {
+        this.salaId = salaId;
     }
 }

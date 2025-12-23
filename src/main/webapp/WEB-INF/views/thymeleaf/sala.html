@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinto - Sala</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .codigo-sala {
+            text-align: center;
+            font-size: 24px;
+            color: #764ba2;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .estado {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .estado.esperando {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .estado.listo {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .equipos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .equipo {
+            border-radius: 15px;
+            padding: 20px;
+            min-height: 250px;
+        }
+
+        .equipo-rojo {
+            background: linear-gradient(135deg, #ffe0e0, #ffcccc);
+            border: 3px solid #e74c3c;
+        }
+
+        .equipo-azul {
+            background: linear-gradient(135deg, #e0e8ff, #ccd9ff);
+            border: 3px solid #3498db;
+        }
+
+        .equipo h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .equipo-rojo h2 {
+            color: #c0392b;
+        }
+
+        .equipo-azul h2 {
+            color: #2980b9;
+        }
+
+        .jugadores {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .slot {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60px;
+            font-size: 16px;
+        }
+
+        .slot.ocupado {
+            background: rgba(255, 255, 255, 0.95);
+            font-weight: 600;
+        }
+
+        .slot.yo {
+            border: 3px solid #27ae60;
+            box-shadow: 0 0 10px rgba(39, 174, 96, 0.3);
+        }
+
+        .slot.vacio {
+            color: #999;
+            border: 2px dashed #ccc;
+        }
+
+        .btn-equipo {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-rojo {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-rojo:hover:not(:disabled) {
+            background: #c0392b;
+        }
+
+        .btn-azul {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-azul:hover:not(:disabled) {
+            background: #2980b9;
+        }
+
+        .btn-equipo:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .acciones {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-empezar {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .btn-empezar:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-empezar:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-salir {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-salir:hover {
+            background: #c0392b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎨 Sala de Espera</h1>
+        <div class="codigo-sala">Código: <span id="codigoSala" th:text="${codigo}">ABC123</span></div>
+
+        <div id="estado" class="estado esperando">
+            ⏳ Esperando jugadores... (1/4)
+        </div>
+
+        <div class="equipos">
+            <!-- Equipo Rojo -->
+            <div class="equipo equipo-rojo">
+                <h2>🔴 Equipo Rojo</h2>
+                <div class="jugadores" id="jugadoresRojo">
+                    <div class="slot vacio">Esperando...</div>
+                    <div class="slot vacio">Esperando...</div>
+                </div>
+                <button id="btnUnirseRojo" class="btn-equipo btn-rojo" onclick="elegirEquipo('rojo')">
+                    Unirse al Rojo
+                </button>
+            </div>
+
+            <!-- Equipo Azul -->
+            <div class="equipo equipo-azul">
+                <h2>🔵 Equipo Azul</h2>
+                <div class="jugadores" id="jugadoresAzul">
+                    <div class="slot vacio">Esperando...</div>
+                    <div class="slot vacio">Esperando...</div>
+                </div>
+                <button id="btnUnirseAzul" class="btn-equipo btn-azul" onclick="elegirEquipo('azul')">
+                    Unirse al Azul
+                </button>
+            </div>
+        </div>
+
+        <div class="acciones">
+            <button id="btnEmpezar" class="btn btn-empezar" onclick="empezarPartida()" disabled>
+                🎮 Empezar Partida
+            </button>
+            <button class="btn btn-salir" onclick="salirDeSala()">
+                🚪 Salir
+            </button>
+        </div>
+    </div>
+
+    <!-- STOMP para WebSocket -->
+    <script th:src="@{/webjars/stomp-websocket/2.3.3/stomp.min.js}"></script>
+
+    <script th:inline="javascript">
+        const miNombre = /*[[${username}]]*/ 'Jugador';
+        const codigoSala = /*[[${codigo}]]*/ 'ABC123';
+
+        let stompClient = null;
+        let miEquipo = null;
+
+        // Conectar WebSocket
+        function conectar() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+            const contextPath = /*[[@{/}]]*/ '/';
+            const wsUrl = protocol + '//' + host + contextPath + 'pinto-websocket';
+
+            console.log('Conectando a:', wsUrl);
+
+            const socket = new WebSocket(wsUrl);
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null;
+
+            stompClient.connect({}, function (frame) {
+                console.log('Conectado a sala');
+
+                // Suscribirse al canal de la sala
+                stompClient.subscribe('/topic/sala/' + codigoSala, function (mensaje) {
+                    const data = JSON.parse(mensaje.body);
+                    procesarMensaje(data);
+                });
+
+                // Notificar que me uní
+                enviarMensaje('unirse', null);
+            }, function (error) {
+                console.error('Error WebSocket:', error);
+                setTimeout(conectar, 3000);
+            });
+        }
+
+        function enviarMensaje(tipo, equipo) {
+            if (stompClient && stompClient.connected) {
+                const mensaje = {
+                    tipo: tipo,
+                    username: miNombre,
+                    equipo: equipo
+                };
+                stompClient.send('/app/sala/' + codigoSala + '/' + tipo, {}, JSON.stringify(mensaje));
+            }
+        }
+
+        function procesarMensaje(data) {
+            console.log('Mensaje recibido:', data);
+
+            if (data.tipo === 'error') {
+                alert(data.mensaje);
+                return;
+            }
+
+            if (data.tipo === 'empezar') {
+                // Redirigir a home para jugar
+                window.location.href = /*[[@{/home}]]*/ '/home';
+                return;
+            }
+
+            if (data.tipo === 'sala_eliminada') {
+                alert('La sala fue eliminada');
+                window.location.href = /*[[@{/lobby}]]*/ '/lobby';
+                return;
+            }
+
+            if (data.tipo === 'actualizar') {
+                actualizarUI(data);
+            }
+        }
+
+        function actualizarUI(data) {
+            const rojoDiv = document.getElementById('jugadoresRojo');
+            const azulDiv = document.getElementById('jugadoresAzul');
+            const estadoDiv = document.getElementById('estado');
+            const btnEmpezar = document.getElementById('btnEmpezar');
+            const btnRojo = document.getElementById('btnUnirseRojo');
+            const btnAzul = document.getElementById('btnUnirseAzul');
+
+            // Actualizar equipo rojo
+            rojoDiv.innerHTML = '';
+            for (let i = 0; i < 2; i++) {
+                const slot = document.createElement('div');
+                if (data.equipoRojo && data.equipoRojo[i]) {
+                    const nombre = data.equipoRojo[i];
+                    slot.className = 'slot ocupado' + (nombre === miNombre ? ' yo' : '');
+                    slot.textContent = nombre + (nombre === miNombre ? ' (Vos)' : '');
+                    if (nombre === miNombre) miEquipo = 'rojo';
+                } else {
+                    slot.className = 'slot vacio';
+                    slot.textContent = 'Esperando...';
+                }
+                rojoDiv.appendChild(slot);
+            }
+
+            // Actualizar equipo azul
+            azulDiv.innerHTML = '';
+            for (let i = 0; i < 2; i++) {
+                const slot = document.createElement('div');
+                if (data.equipoAzul && data.equipoAzul[i]) {
+                    const nombre = data.equipoAzul[i];
+                    slot.className = 'slot ocupado' + (nombre === miNombre ? ' yo' : '');
+                    slot.textContent = nombre + (nombre === miNombre ? ' (Vos)' : '');
+                    if (nombre === miNombre) miEquipo = 'azul';
+                } else {
+                    slot.className = 'slot vacio';
+                    slot.textContent = 'Esperando...';
+                }
+                azulDiv.appendChild(slot);
+            }
+
+            // Actualizar estado
+            const totalJugadores = (data.equipoRojo ? data.equipoRojo.length : 0) + (data.equipoAzul ? data.equipoAzul.length : 0);
+            if (data.puedeEmpezar) {
+                estadoDiv.className = 'estado listo';
+                estadoDiv.innerHTML = '✅ ¡Listos! 4/4 jugadores';
+                btnEmpezar.disabled = false;
+            } else {
+                estadoDiv.className = 'estado esperando';
+                estadoDiv.innerHTML = '⏳ Esperando jugadores... (' + totalJugadores + '/4)';
+                btnEmpezar.disabled = true;
+            }
+
+            // Actualizar botones de equipo
+            const rojoLleno = data.equipoRojo && data.equipoRojo.length >= 2;
+            const azulLleno = data.equipoAzul && data.equipoAzul.length >= 2;
+            btnRojo.disabled = rojoLleno || miEquipo === 'rojo';
+            btnAzul.disabled = azulLleno || miEquipo === 'azul';
+
+            if (miEquipo === 'rojo') btnRojo.textContent = '✓ En Equipo Rojo';
+            else btnRojo.textContent = rojoLleno ? 'Equipo Lleno' : 'Unirse al Rojo';
+
+            if (miEquipo === 'azul') btnAzul.textContent = '✓ En Equipo Azul';
+            else btnAzul.textContent = azulLleno ? 'Equipo Lleno' : 'Unirse al Azul';
+        }
+
+        function elegirEquipo(equipo) {
+            enviarMensaje('equipo', equipo);
+        }
+
+        function empezarPartida() {
+            enviarMensaje('empezar', null);
+        }
+
+        function salirDeSala() {
+            if (stompClient && stompClient.connected) {
+                enviarMensaje('salir', null);
+            }
+            window.location.href = /*[[@{/lobby}]]*/ '/lobby';
+        }
+
+        // Iniciar conexión
+        conectar();
+    </script>
+</body>
+
+</html>

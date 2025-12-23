@@ -1,39 +1,55 @@
 package com.pinto.presentacion;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import com.pinto.dominio.MensajeTrazo;
 
 /**
  * Controlador WebSocket para el juego de dibujo.
- * Recibe trazos de los jugadores y los reenvía a todos.
+ * Los trazos se envían solo a los jugadores del mismo equipo.
  */
 @Controller
 public class ControladorDibujo {
 
-    /**
-     * Recibe un trazo de un jugador y lo reenvía a todos los suscriptores.
-     * 
-     * Cliente envía a: /app/dibujar
-     * Servidor reenvía a: /topic/trazos
-     */
-    @MessageMapping("/dibujar")
-    @SendTo("/topic/trazos")
-    public MensajeTrazo procesarTrazo(MensajeTrazo trazo) {
-        // Simplemente reenviamos el trazo a todos los clientes
-        // En el futuro podríamos agregar validaciones o lógica de salas
-        return trazo;
+    private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    public ControladorDibujo(SimpMessagingTemplate messagingTemplate) {
+        this.messagingTemplate = messagingTemplate;
     }
 
     /**
-     * Cuando un jugador borra el canvas, notifica a todos.
+     * Recibe un trazo y lo reenvía solo a los del mismo equipo.
+     * 
+     * Cliente envía a: /app/dibujar/{salaId}/{equipo}
+     * Servidor reenvía a: /topic/trazos/{salaId}/{equipo}
      */
-    @MessageMapping("/borrar")
-    @SendTo("/topic/trazos")
-    public MensajeTrazo borrarCanvas(MensajeTrazo mensaje) {
+    @MessageMapping("/dibujar/{salaId}/{equipo}")
+    public void procesarTrazo(
+            @DestinationVariable String salaId,
+            @DestinationVariable String equipo,
+            MensajeTrazo trazo) {
+
+        // Enviar solo a los suscriptores del mismo equipo en la misma sala
+        String destino = "/topic/trazos/" + salaId + "/" + equipo;
+        messagingTemplate.convertAndSend(destino, trazo);
+    }
+
+    /**
+     * Cuando un jugador borra el canvas, notifica solo a su equipo.
+     */
+    @MessageMapping("/borrar/{salaId}/{equipo}")
+    public void borrarCanvas(
+            @DestinationVariable String salaId,
+            @DestinationVariable String equipo,
+            MensajeTrazo mensaje) {
+
         mensaje.setTipo("borrar");
-        return mensaje;
+        String destino = "/topic/trazos/" + salaId + "/" + equipo;
+        messagingTemplate.convertAndSend(destino, mensaje);
     }
 }

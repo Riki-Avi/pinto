@@ -7,8 +7,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.pinto.dominio.Sala;
 import com.pinto.dominio.Usuario;
 import com.pinto.dominio.ServicioUsuario;
+import com.pinto.infraestructura.GestorSalas;
 
 import javax.servlet.http.HttpSession;
 
@@ -16,10 +18,12 @@ import javax.servlet.http.HttpSession;
 public class ControladorLogin {
 
     private ServicioUsuario servicioUsuario;
+    private GestorSalas gestorSalas;
 
     @Autowired
-    public ControladorLogin(ServicioUsuario servicioUsuario) {
+    public ControladorLogin(ServicioUsuario servicioUsuario, GestorSalas gestorSalas) {
         this.servicioUsuario = servicioUsuario;
+        this.gestorSalas = gestorSalas;
     }
 
     @GetMapping("/registro")
@@ -66,7 +70,7 @@ public class ControladorLogin {
         // Guardar usuario en sesión
         session.setAttribute("usuario", usuarioEncontrado);
 
-        return new ModelAndView("redirect:/home");
+        return new ModelAndView("redirect:/lobby");
     }
 
     @GetMapping("/home")
@@ -74,12 +78,29 @@ public class ControladorLogin {
         Usuario usuario = (Usuario) session.getAttribute("usuario");
 
         if (usuario == null) {
-            // Si no hay usuario en sesión, redirigir al login
             return new ModelAndView("redirect:/");
+        }
+
+        // Obtener sala y equipo de la sesión
+        String salaId = (String) session.getAttribute("salaActual");
+        if (salaId == null) {
+            return new ModelAndView("redirect:/lobby");
+        }
+
+        Sala sala = gestorSalas.obtenerSala(salaId);
+        if (sala == null) {
+            return new ModelAndView("redirect:/lobby");
+        }
+
+        String equipo = sala.getEquipoDeJugador(usuario.getUsername());
+        if (equipo == null) {
+            return new ModelAndView("redirect:/lobby");
         }
 
         ModelAndView mav = new ModelAndView("home");
         mav.addObject("username", usuario.getUsername());
+        mav.addObject("salaId", salaId);
+        mav.addObject("equipo", equipo);
         return mav;
     }
 }
