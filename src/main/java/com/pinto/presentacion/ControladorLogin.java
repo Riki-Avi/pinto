@@ -97,10 +97,47 @@ public class ControladorLogin {
             return new ModelAndView("redirect:/lobby");
         }
 
+        // Obtener rol e imagen del jugador
+        String rol = sala.getRolDeJugador(usuario.getUsername());
+        String imagen = sala.getImagenParaJugador(usuario.getUsername());
+
         ModelAndView mav = new ModelAndView("home");
         mav.addObject("username", usuario.getUsername());
         mav.addObject("salaId", salaId);
         mav.addObject("equipo", equipo);
+        mav.addObject("rol", rol); // "observador" o "dibujante"
+        mav.addObject("imagen", imagen); // nombre del archivo de imagen
+        return mav;
+    }
+
+    /**
+     * Pantalla de juego modo memoria.
+     */
+    @GetMapping("/home-memoria")
+    public ModelAndView homeMemoria(HttpSession session) {
+        Usuario usuario = (Usuario) session.getAttribute("usuario");
+        if (usuario == null) {
+            return new ModelAndView("redirect:/");
+        }
+
+        String salaId = (String) session.getAttribute("salaActual");
+        if (salaId == null) {
+            return new ModelAndView("redirect:/lobby");
+        }
+
+        Sala sala = gestorSalas.obtenerSala(salaId);
+        if (sala == null) {
+            return new ModelAndView("redirect:/lobby");
+        }
+
+        String equipo = sala.getEquipoDeJugador(usuario.getUsername());
+        String imagen = sala.getImagenParaJugador(usuario.getUsername());
+
+        ModelAndView mav = new ModelAndView("home_memoria");
+        mav.addObject("username", usuario.getUsername());
+        mav.addObject("salaId", salaId);
+        mav.addObject("equipo", equipo);
+        mav.addObject("imagen", imagen);
         return mav;
     }
 }

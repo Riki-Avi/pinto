@@ -116,4 +116,25 @@ public class ControladorSalaWS {
         gestorSalas.iniciarPartida(codigo);
         return MensajeSala.empezar(sala);
     }
+
+    /**
+     * Cambiar modo de juego (equipos vs memoria).
+     */
+    @MessageMapping("/sala/{codigo}/modo")
+    @SendTo("/topic/sala/{codigo}")
+    public MensajeSala cambiarModo(@DestinationVariable String codigo, MensajeSala mensaje) {
+        Sala sala = gestorSalas.obtenerSala(codigo);
+        if (sala == null) {
+            return MensajeSala.error("Sala no encontrada");
+        }
+
+        // Guardar el modo en la sala
+        sala.setModo(mensaje.getEquipo()); // Reutilizamos equipo para pasar el modo
+
+        // Notificar a todos
+        MensajeSala respuesta = MensajeSala.actualizacion(sala);
+        respuesta.setTipo("modo_cambiado");
+        respuesta.setEquipo(sala.getModo());
+        return respuesta;
+    }
 }

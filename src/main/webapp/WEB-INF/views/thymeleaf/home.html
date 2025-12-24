@@ -20,7 +20,7 @@
         }
 
         #container {
-            max-width: 900px;
+            max-width: 1100px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
@@ -31,7 +31,7 @@
         h1 {
             text-align: center;
             color: #333;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         #estado {
@@ -42,14 +42,58 @@
             font-weight: bold;
         }
 
-        .equipo-badge {
-            text-align: center;
-            padding: 8px 15px;
+        #estado.conectado {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        #estado.desconectado {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 8px 20px;
             border-radius: 20px;
-            margin-bottom: 15px;
             font-weight: 600;
-            display: inline-block;
-            width: 100%;
+            font-size: 14px;
+        }
+
+        .timer {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .timer.urgente {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            animation: pulso 0.5s infinite;
+        }
+
+        @keyframes pulso {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
         }
 
         .equipo-rojo {
@@ -64,14 +108,64 @@
             border: 2px solid #3498db;
         }
 
-        #estado.conectado {
-            background-color: #d4edda;
+        .rol-observador {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
             color: #155724;
+            border: 2px solid #28a745;
         }
 
-        #estado.desconectado {
-            background-color: #f8d7da;
-            color: #721c24;
+        .rol-dibujante {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            color: #856404;
+            border: 2px solid #ffc107;
+        }
+
+        .game-area {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #canvas {
+            display: block;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            cursor: crosshair;
+        }
+
+        /* Canvas negro para dibujante */
+        #canvas.canvas-ciego {
+            filter: brightness(0);
+            cursor: crosshair;
+        }
+
+        .imagen-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 15px;
+            border: 3px dashed #28a745;
+        }
+
+        .imagen-container h3 {
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+
+        .imagen-referencia {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
         #controles {
@@ -79,10 +173,11 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 15px;
-            margin-bottom: 15px;
+            margin-top: 15px;
             padding: 15px;
             background: #f8f9fa;
             border-radius: 10px;
+            justify-content: center;
         }
 
         .control-group {
@@ -94,14 +189,6 @@
         .control-group label {
             font-weight: 500;
             color: #555;
-        }
-
-        #canvas {
-            display: block;
-            margin: 0 auto;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            cursor: crosshair;
         }
 
         button {
@@ -124,6 +211,26 @@
             box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4);
         }
 
+        .mensaje-rol {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 16px;
+        }
+
+        .mensaje-observador {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .mensaje-dibujante {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffc107;
+        }
+
         /* Historial de colores */
         #coloresRecientes {
             display: flex;
@@ -144,19 +251,6 @@
             transform: scale(1.15);
             border-color: #999;
         }
-
-        .colorReciente.activo {
-            border-color: #3498db;
-            box-shadow: 0 0 8px #3498db;
-        }
-
-        #jugadoresOnline {
-            margin-top: 15px;
-            padding: 10px;
-            background: #e9ecef;
-            border-radius: 8px;
-            text-align: center;
-        }
     </style>
 </head>
 
@@ -166,11 +260,45 @@
 
         <div id="estado" class="desconectado">⏳ Conectando como <span th:text="${username}"></span>...</div>
 
-        <div id="equipoInfo" th:class="'equipo-badge equipo-' + ${equipo}">
-            Equipo: <strong th:text="${equipo == 'rojo'} ? '🔴 Rojo' : '🔵 Azul'">Equipo</strong>
+        <div class="info-row">
+            <span class="badge" th:classappend="'equipo-' + ${equipo}">
+                <span th:text="${equipo == 'rojo'} ? '🔴 Equipo Rojo' : '🔵 Equipo Azul'">Equipo</span>
+            </span>
+            <span class="badge" th:classappend="'rol-' + ${rol}">
+                <span th:text="${rol == 'observador'} ? '👁️ Observador' : '✏️ Dibujante'">Rol</span>
+            </span>
         </div>
 
-        <div id="controles">
+        <!-- Timer -->
+        <div id="timer" class="timer">⏱️ 01:00</div>
+
+        <div class="game-area">
+            <!-- Imagen de referencia: solo para OBSERVADOR -->
+            <div th:if="${rol == 'observador'}" class="imagen-container">
+                <h3>📷 Imagen a dibujar</h3>
+                <img th:src="@{/resources/images/{img}(img=${imagen})}" alt="Imagen a dibujar"
+                    class="imagen-referencia">
+                <p style="margin-top: 10px; color: #666;">Tu compañero debe dibujar esto</p>
+            </div>
+
+            <!-- Canvas -->
+            <div class="canvas-container">
+                <canvas id="canvas" width="600" height="400" style="background: white;"
+                    th:classappend="${rol == 'dibujante'} ? 'canvas-ciego' : ''">
+                </canvas>
+
+                <!-- Mensaje según rol -->
+                <div th:if="${rol == 'observador'}" class="mensaje-rol mensaje-observador">
+                    👁️ Estás observando. Ve lo que dibuja tu compañero y adivina la imagen.
+                </div>
+                <div th:if="${rol == 'dibujante'}" class="mensaje-rol mensaje-dibujante">
+                    ✏️ Dibujá la imagen que te describió tu compañero. ¡No podés ver lo que dibujás!
+                </div>
+            </div>
+        </div>
+
+        <!-- Controles: solo para DIBUJANTE -->
+        <div th:if="${rol == 'dibujante'}" id="controles">
             <div class="control-group">
                 <label>Grosor:</label>
                 <input type="range" id="grosor" min="1" max="30" value="5">
@@ -189,44 +317,44 @@
 
             <button id="btnBorrar">🗑️ Borrar todo</button>
         </div>
-
-        <canvas id="canvas" width="850" height="500" style="background: white;"></canvas>
-
-        <div id="jugadoresOnline">
-            👥 Dibujando en tiempo real con otros jugadores
-        </div>
     </div>
 
-    <!-- STOMP para WebSocket (sin SockJS - WebSocket nativo) -->
+    <!-- STOMP para WebSocket -->
     <script th:src="@{/webjars/stomp-websocket/2.3.3/stomp.min.js}"></script>
 
     <script th:inline="javascript">
         // =====================
-        // CONFIGURACIÓN CANVAS
+        // CONFIGURACIÓN
         // =====================
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const estadoDiv = document.getElementById('estado');
+
+        // Variables del servidor
+        let miNombre = /*[[${username}]]*/ 'Jugador';
+        let miEquipo = /*[[${equipo}]]*/ 'rojo';
+        let miSalaId = /*[[${salaId}]]*/ 'ABC123';
+        let miRol = /*[[${rol}]]*/ 'observador';
+
+        // Solo dibujante tiene controles
         const inputGrosor = document.getElementById('grosor');
-        const spanGrosor = document.getElementById('valorGrosor');
         const inputColor = document.getElementById('color');
         const btnBorrar = document.getElementById('btnBorrar');
         const coloresRecientesDiv = document.getElementById('coloresRecientes');
-        const estadoDiv = document.getElementById('estado');
+        const spanGrosor = document.getElementById('valorGrosor');
 
         let dibujando = false;
         let coloresRecientes = [];
         const MAX_COLORES_RECIENTES = 8;
         let stompClient = null;
-        let miNombre = /*[[${username}]]*/ 'Jugador';
-        let miEquipo = /*[[${equipo}]]*/ 'rojo';
-        let miSalaId = /*[[${salaId}]]*/ 'ABC123';
+
+        // Posición del cursor remoto (para el observador)
+        let cursorRemoto = { x: 0, y: 0, visible: false };
 
         // =====================
         // WEBSOCKET
         // =====================
         function conectarWebSocket() {
-            // URL dinámica con WebSocket nativo (sin SockJS)
-            // Detecta automáticamente ws:// o wss:// según el protocolo de la página
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const host = window.location.host;
             const contextPath = /*[[@{/}]]*/ '/';
@@ -236,13 +364,11 @@
 
             const socket = new WebSocket(wsUrl);
             stompClient = Stomp.over(socket);
-
-            // Desactivar logs de debug de STOMP
             stompClient.debug = null;
 
             stompClient.connect({}, function (frame) {
                 console.log('Conectado: ' + frame);
-                estadoDiv.innerHTML = '✅ Conectado como <strong>' + miNombre + '</strong> - ¡Dibujá!';
+                estadoDiv.innerHTML = '✅ Conectado como <strong>' + miNombre + '</strong>';
                 estadoDiv.className = 'conectado';
 
                 // Suscribirse al canal de trazos DEL MISMO EQUIPO
@@ -258,34 +384,33 @@
                 console.error('Error WebSocket:', error);
                 estadoDiv.textContent = '❌ Desconectado - Reintentando...';
                 estadoDiv.className = 'desconectado';
-
-                // Reintentar conexión
                 setTimeout(conectarWebSocket, 3000);
             });
         }
 
-        // Estado de trazos remotos por jugador
+        // Estado de trazos remotos
         let trazosRemotos = {};
 
-        // Procesar trazo recibido de otro jugador
         function procesarTrazoRecibido(trazo) {
-            console.log('Trazo recibido:', trazo); // Debug
+            if (trazo.tipo === 'cursor') {
+                // Actualizar posición del cursor remoto
+                cursorRemoto = { x: trazo.x, y: trazo.y, visible: true };
+                dibujarCursorRemoto();
+                return;
+            }
 
             if (trazo.tipo === 'borrar') {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 return;
             }
 
-            // Guardar/obtener estado del jugador remoto
             if (!trazosRemotos[trazo.jugador]) {
                 trazosRemotos[trazo.jugador] = { x: 0, y: 0 };
             }
 
             if (trazo.tipo === 'inicio') {
-                // Solo guardar posición inicial
                 trazosRemotos[trazo.jugador] = { x: trazo.x, y: trazo.y };
             } else if (trazo.tipo === 'dibujo') {
-                // Dibujar línea desde la última posición hasta la nueva
                 ctx.save();
                 ctx.strokeStyle = trazo.color;
                 ctx.lineWidth = trazo.grosor;
@@ -296,154 +421,186 @@
                 ctx.lineTo(trazo.x, trazo.y);
                 ctx.stroke();
                 ctx.restore();
-
-                // Actualizar última posición
                 trazosRemotos[trazo.jugador] = { x: trazo.x, y: trazo.y };
             }
         }
 
-        // Enviar trazo al servidor
+        // Enviar trazo (solo si es dibujante)
         function enviarTrazo(tipo, x, y) {
-            console.log('Intentando enviar trazo:', tipo, x, y, 'Conectado:', stompClient && stompClient.connected);
+            if (miRol !== 'dibujante') return;
+
             if (stompClient && stompClient.connected) {
                 const trazo = {
                     tipo: tipo,
                     x: x,
                     y: y,
-                    color: inputColor.value,
-                    grosor: parseInt(inputGrosor.value),
+                    color: inputColor ? inputColor.value : '#000000',
+                    grosor: inputGrosor ? parseInt(inputGrosor.value) : 5,
                     jugador: miNombre
                 };
-                console.log('Enviando trazo:', trazo);
                 stompClient.send('/app/dibujar/' + miSalaId + '/' + miEquipo, {}, JSON.stringify(trazo));
-            } else {
-                console.log('No conectado, no se puede enviar');
             }
         }
 
-        // =====================
-        // EVENTOS DEL CANVAS - MOUSE
-        // =====================
-        canvas.addEventListener('mousedown', (e) => {
-            dibujando = true;
-            ctx.lineWidth = inputGrosor.value;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = inputColor.value;
-            ctx.beginPath();
-            ctx.moveTo(e.offsetX, e.offsetY);
+        // Enviar posición del cursor (solo dibujante, para que observador vea)
+        function enviarCursor(x, y) {
+            if (miRol !== 'dibujante') return;
 
-            enviarTrazo('inicio', e.offsetX, e.offsetY);
-            agregarColorReciente(inputColor.value);
-        });
+            if (stompClient && stompClient.connected) {
+                const cursor = {
+                    tipo: 'cursor',
+                    x: x,
+                    y: y,
+                    jugador: miNombre
+                };
+                stompClient.send('/app/dibujar/' + miSalaId + '/' + miEquipo, {}, JSON.stringify(cursor));
+            }
+        }
 
-        canvas.addEventListener('mousemove', (e) => {
-            if (dibujando) {
-                ctx.lineTo(e.offsetX, e.offsetY);
-                ctx.stroke();
+        // Dibujar indicador del cursor remoto (solo para observador)
+        // Usamos un overlay para no interferir con el dibujo
+        let cursorOverlay = null;
+
+        function dibujarCursorRemoto() {
+            if (miRol !== 'observador') return;
+
+            // Crear overlay si no existe
+            if (!cursorOverlay) {
+                cursorOverlay = document.createElement('div');
+                cursorOverlay.style.cssText = `
+                    position: absolute;
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    border: 3px solid #e74c3c;
+                    background: rgba(231, 76, 60, 0.3);
+                    pointer-events: none;
+                    transform: translate(-50%, -50%);
+                    z-index: 100;
+                    transition: all 0.05s ease-out;
+                `;
+                canvas.parentElement.style.position = 'relative';
+                canvas.parentElement.appendChild(cursorOverlay);
+            }
+
+            // Posicionar el cursor
+            const rect = canvas.getBoundingClientRect();
+            cursorOverlay.style.left = cursorRemoto.x + 'px';
+            cursorOverlay.style.top = cursorRemoto.y + 'px';
+            cursorOverlay.style.display = cursorRemoto.visible ? 'block' : 'none';
+        }
+
+        // =====================
+        // EVENTOS DEL CANVAS - Solo DIBUJANTE puede dibujar
+        // =====================
+        if (miRol === 'dibujante') {
+            canvas.addEventListener('mousedown', (e) => {
+                dibujando = true;
+                ctx.lineWidth = inputGrosor.value;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = inputColor.value;
                 ctx.beginPath();
                 ctx.moveTo(e.offsetX, e.offsetY);
+                enviarTrazo('inicio', e.offsetX, e.offsetY);
+                agregarColorReciente(inputColor.value);
+            });
 
-                enviarTrazo('dibujo', e.offsetX, e.offsetY);
+            canvas.addEventListener('mousemove', (e) => {
+                // Siempre enviar posición del cursor
+                enviarCursor(e.offsetX, e.offsetY);
+
+                if (dibujando) {
+                    ctx.lineTo(e.offsetX, e.offsetY);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(e.offsetX, e.offsetY);
+                    enviarTrazo('dibujo', e.offsetX, e.offsetY);
+                }
+            });
+
+            canvas.addEventListener('mouseup', () => {
+                dibujando = false;
+                enviarTrazo('fin', 0, 0);
+            });
+
+            canvas.addEventListener('mouseleave', () => {
+                dibujando = false;
+            });
+
+            // Touch events
+            function getTouchPos(touch) {
+                const rect = canvas.getBoundingClientRect();
+                return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
             }
-        });
 
-        canvas.addEventListener('mouseup', () => {
-            dibujando = false;
-            enviarTrazo('fin', 0, 0);
-        });
-
-        canvas.addEventListener('mouseleave', () => {
-            dibujando = false;
-        });
-
-        // =====================
-        // EVENTOS DEL CANVAS - TOUCH (CELULARES)
-        // =====================
-        function getTouchPos(touch) {
-            const rect = canvas.getBoundingClientRect();
-            return {
-                x: touch.clientX - rect.left,
-                y: touch.clientY - rect.top
-            };
-        }
-
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const pos = getTouchPos(touch);
-
-            dibujando = true;
-            ctx.lineWidth = inputGrosor.value;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = inputColor.value;
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-
-            enviarTrazo('inicio', pos.x, pos.y);
-            agregarColorReciente(inputColor.value);
-        });
-
-        canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            if (dibujando) {
-                const touch = e.touches[0];
-                const pos = getTouchPos(touch);
-
-                ctx.lineTo(pos.x, pos.y);
-                ctx.stroke();
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const pos = getTouchPos(e.touches[0]);
+                dibujando = true;
+                ctx.lineWidth = inputGrosor.value;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = inputColor.value;
                 ctx.beginPath();
                 ctx.moveTo(pos.x, pos.y);
+                enviarTrazo('inicio', pos.x, pos.y);
+            });
 
-                enviarTrazo('dibujo', pos.x, pos.y);
-            }
-        });
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (dibujando) {
+                    const pos = getTouchPos(e.touches[0]);
+                    ctx.lineTo(pos.x, pos.y);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x, pos.y);
+                    enviarTrazo('dibujo', pos.x, pos.y);
+                }
+            });
 
-        canvas.addEventListener('touchend', () => {
-            dibujando = false;
-            enviarTrazo('fin', 0, 0);
-        });
-
-        canvas.addEventListener('touchcancel', () => {
-            dibujando = false;
-        });
+            canvas.addEventListener('touchend', () => {
+                dibujando = false;
+            });
+        }
 
         // =====================
-        // CONTROLES
+        // CONTROLES (solo DIBUJANTE)
         // =====================
-        inputGrosor.addEventListener('input', () => {
-            spanGrosor.textContent = inputGrosor.value;
-        });
+        if (inputGrosor) {
+            inputGrosor.addEventListener('input', () => {
+                spanGrosor.textContent = inputGrosor.value;
+            });
+        }
 
-        btnBorrar.addEventListener('click', () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (btnBorrar) {
+            btnBorrar.addEventListener('click', () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (stompClient && stompClient.connected) {
+                    const mensaje = { tipo: 'borrar', jugador: miNombre };
+                    stompClient.send('/app/borrar/' + miSalaId + '/' + miEquipo, {}, JSON.stringify(mensaje));
+                }
+            });
+        }
 
-            // Notificar a otros jugadores
-            if (stompClient && stompClient.connected) {
-                const mensaje = { tipo: 'borrar', jugador: miNombre };
-                stompClient.send('/app/borrar/' + miSalaId + '/' + miEquipo, {}, JSON.stringify(mensaje));
-            }
-        });
-
-        inputColor.addEventListener('change', () => {
-            agregarColorReciente(inputColor.value);
-        });
+        if (inputColor) {
+            inputColor.addEventListener('change', () => {
+                agregarColorReciente(inputColor.value);
+            });
+        }
 
         // =====================
         // COLORES RECIENTES
         // =====================
         function agregarColorReciente(color) {
+            if (!coloresRecientesDiv) return;
             const index = coloresRecientes.indexOf(color);
-            if (index > -1) {
-                coloresRecientes.splice(index, 1);
-            }
+            if (index > -1) coloresRecientes.splice(index, 1);
             coloresRecientes.unshift(color);
-            if (coloresRecientes.length > MAX_COLORES_RECIENTES) {
-                coloresRecientes.pop();
-            }
+            if (coloresRecientes.length > MAX_COLORES_RECIENTES) coloresRecientes.pop();
             actualizarColoresRecientes();
         }
 
         function actualizarColoresRecientes() {
+            if (!coloresRecientesDiv) return;
             coloresRecientesDiv.innerHTML = '';
             coloresRecientes.forEach(color => {
                 const div = document.createElement('div');
@@ -452,35 +609,71 @@
                 div.title = color;
                 div.addEventListener('click', () => {
                     inputColor.value = color;
-                    marcarColorActivo(color);
                 });
                 coloresRecientesDiv.appendChild(div);
             });
-            marcarColorActivo(inputColor.value);
         }
 
-        function marcarColorActivo(color) {
-            document.querySelectorAll('.colorReciente').forEach(div => {
-                const bgColor = div.style.backgroundColor;
-                if (rgbToHex(bgColor) === color.toLowerCase()) {
-                    div.classList.add('activo');
-                } else {
-                    div.classList.remove('activo');
-                }
-            });
+        // =====================
+        // TIMER
+        // =====================
+        const timerDiv = document.getElementById('timer');
+        let tiempoRestante = 60; // 60 segundos
+
+        function actualizarTimer() {
+            const minutos = Math.floor(tiempoRestante / 60);
+            const segundos = tiempoRestante % 60;
+            timerDiv.textContent = '⏱️ ' +
+                String(minutos).padStart(2, '0') + ':' +
+                String(segundos).padStart(2, '0');
+
+            // Agregar efecto urgente en últimos 10 segundos
+            if (tiempoRestante <= 10) {
+                timerDiv.classList.add('urgente');
+            }
+
+            if (tiempoRestante <= 0) {
+                timerDiv.textContent = '⏱️ ¡Tiempo!';
+                finalizarDibujo();
+            } else {
+                tiempoRestante--;
+                setTimeout(actualizarTimer, 1000);
+            }
         }
 
-        function rgbToHex(rgb) {
-            if (rgb.startsWith('#')) return rgb;
-            const result = rgb.match(/\d+/g);
-            if (!result) return rgb;
-            return '#' + result.map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+        function finalizarDibujo() {
+            // Capturar el canvas como imagen base64
+            const dibujoBase64 = canvas.toDataURL('image/png');
+
+            // Enviar al servidor
+            fetch(/*[[@{/guardar-dibujo}]]*/ '/guardar-dibujo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    salaId: miSalaId,
+                    equipo: miEquipo,
+                    dibujo: dibujoBase64
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Dibujo guardado:', data);
+                    // Redirigir a resultados
+                    setTimeout(() => {
+                        window.location.href = /*[[@{/resultado}]]*/ '/resultado';
+                    }, 1500);
+                })
+                .catch(error => {
+                    console.error('Error guardando dibujo:', error);
+                    window.location.href = /*[[@{/resultado}]]*/ '/resultado';
+                });
         }
 
         // =====================
         // INICIAR
         // =====================
         conectarWebSocket();
+        actualizarTimer(); // Iniciar timer
     </script>
 </body>
 

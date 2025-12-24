@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinto - Resultados Memoria</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .fase-info {
+            font-size: 20px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .comparacion {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+
+        .imagen-box {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 15px;
+        }
+
+        .imagen-box h3 {
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .imagen-box img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .imagen-box.original {
+            border: 3px solid #27ae60;
+        }
+
+        .imagen-box.dibujo.rojo {
+            border: 3px solid #e74c3c;
+        }
+
+        .imagen-box.dibujo.azul {
+            border: 3px solid #3498db;
+        }
+
+        .jugador-label {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .jugador-rojo {
+            color: #e74c3c;
+        }
+
+        .jugador-azul {
+            color: #3498db;
+        }
+
+        .votacion {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .btn-voto {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            transition: all 0.2s;
+        }
+
+        .btn-voto:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-voto.seleccionado {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            transform: scale(1.2);
+        }
+
+        .esperando {
+            padding: 20px;
+            background: #fff3cd;
+            color: #856404;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .votos-info {
+            font-size: 18px;
+            color: #555;
+            margin: 15px 0;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 10px;
+        }
+
+        .resultado-final {
+            display: none;
+        }
+
+        .resultado-final.visible {
+            display: block;
+        }
+
+        .puntajes {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin: 30px 0;
+        }
+
+        .puntaje-equipo {
+            padding: 30px 50px;
+            border-radius: 15px;
+            font-size: 24px;
+        }
+
+        .puntaje-equipo.rojo {
+            background: linear-gradient(135deg, #ffe0e0, #ffcccc);
+            border: 3px solid #e74c3c;
+        }
+
+        .puntaje-equipo.azul {
+            background: linear-gradient(135deg, #e0e8ff, #ccd9ff);
+            border: 3px solid #3498db;
+        }
+
+        .puntaje-numero {
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .ganador-banner {
+            font-size: 36px;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            color: white;
+        }
+
+        .ganador-banner.rojo {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .ganador-banner.azul {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+
+        .ganador-banner.empate {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+
+        .btn-volver {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Pantalla de votación -->
+        <div id="pantallaVotacion">
+            <h1>🧠 ¡Hora de votar!</h1>
+
+            <div class="fase-info" id="faseInfo">
+                Votando dibujo 1 de 4
+            </div>
+
+            <p id="jugadorLabel" class="jugador-label jugador-rojo">🔴 Jugador</p>
+
+            <div class="comparacion">
+                <div class="imagen-box original">
+                    <h3>📷 Imagen Original</h3>
+                    <img th:src="@{/resources/images/{img}(img=${imagenOriginal})}" alt="Imagen original"
+                        id="imgOriginal">
+                </div>
+                <div class="imagen-box dibujo rojo" id="dibujoBox">
+                    <h3>✏️ Dibujo del Jugador</h3>
+                    <img id="dibujoActual" src="" alt="Dibujo">
+                </div>
+            </div>
+
+            <p>¿Qué tan bien representa la imagen original? (1-10)</p>
+
+            <div class="votacion">
+                <button class="btn-voto" onclick="votar(1)">1</button>
+                <button class="btn-voto" onclick="votar(2)">2</button>
+                <button class="btn-voto" onclick="votar(3)">3</button>
+                <button class="btn-voto" onclick="votar(4)">4</button>
+                <button class="btn-voto" onclick="votar(5)">5</button>
+                <button class="btn-voto" onclick="votar(6)">6</button>
+                <button class="btn-voto" onclick="votar(7)">7</button>
+                <button class="btn-voto" onclick="votar(8)">8</button>
+                <button class="btn-voto" onclick="votar(9)">9</button>
+                <button class="btn-voto" onclick="votar(10)">10</button>
+            </div>
+
+            <div id="votosInfo" class="votos-info">
+                Jugadores que votaron: <strong><span id="votosCount">0</span>/4</strong>
+            </div>
+
+            <div id="esperando" class="esperando" style="display: none;">
+                ⏳ Esperando a que todos voten este dibujo...
+            </div>
+        </div>
+
+        <!-- Pantalla de resultado final -->
+        <div id="pantallaResultado" class="resultado-final">
+            <h1>🏆 ¡Resultados Finales!</h1>
+            <div class="puntajes">
+                <div class="puntaje-equipo rojo">
+                    <p>🔴 Equipo Rojo</p>
+                    <p class="puntaje-numero" id="puntajeRojo">0</p>
+                    <p>puntos</p>
+                </div>
+                <div class="puntaje-equipo azul">
+                    <p>🔵 Equipo Azul</p>
+                    <p class="puntaje-numero" id="puntajeAzul">0</p>
+                    <p>puntos</p>
+                </div>
+            </div>
+            <div id="ganadorBanner" class="ganador-banner rojo">🏆 ¡Ganador: Equipo Rojo!</div>
+            <button class="btn-volver" onclick="volverAlLobby()">🎮 Volver al Lobby</button>
+        </div>
+    </div>
+
+    <script th:src="@{/webjars/stomp-websocket/2.3.3/stomp.min.js}"></script>
+
+    <script th:inline="javascript">
+        const miNombre = /*[[${username}]]*/ 'Jugador';
+        const miSalaId = /*[[${salaId}]]*/ 'ABC123';
+        const jugadores = /*[[${jugadores}]]*/[];
+        const dibujos = /*[[${dibujos}]]*/ {};
+        const equipoRojo = /*[[${equipoRojo}]]*/[];
+        const equipoAzul = /*[[${equipoAzul}]]*/[];
+
+        let stompClient = null;
+        let faseActual = 0; // índice del jugador actual
+        let miVoto = null;
+
+        function conectar() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+            const contextPath = /*[[@{/}]]*/ '/';
+            const wsUrl = protocol + '//' + host + contextPath + 'pinto-websocket';
+
+            const socket = new WebSocket(wsUrl);
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null;
+
+            stompClient.connect({}, function () {
+                stompClient.subscribe('/topic/votacion/' + miSalaId, function (mensaje) {
+                    procesarMensaje(JSON.parse(mensaje.body));
+                });
+            });
+        }
+
+        function mostrarDibujoActual() {
+            if (faseActual >= jugadores.length) {
+                // Todos votados, esperando resultados
+                document.getElementById('faseInfo').textContent = '✅ Todos los dibujos votados. Calculando resultados...';
+                return;
+            }
+
+            const jugador = jugadores[faseActual];
+            const esRojo = equipoRojo.includes(jugador);
+            const emoji = esRojo ? '🔴' : '🔵';
+
+            document.getElementById('faseInfo').textContent = `Votando dibujo ${faseActual + 1} de ${jugadores.length}`;
+            document.getElementById('jugadorLabel').textContent = `${emoji} ${jugador}`;
+            document.getElementById('jugadorLabel').className = 'jugador-label ' + (esRojo ? 'jugador-rojo' : 'jugador-azul');
+            document.getElementById('dibujoActual').src = dibujosActuales[jugador] || dibujos[jugador] || '';
+            document.getElementById('dibujoBox').className = 'imagen-box dibujo ' + (esRojo ? 'rojo' : 'azul');
+        }
+
+        let votando = false; // Flag adicional
+
+        function votar(puntaje) {
+            console.log('Votando:', puntaje, 'votando:', votando, 'miVoto:', miVoto);
+
+            // Verificación doble
+            if (votando || miVoto !== null) {
+                console.log('Ya votaste o votando en progreso');
+                return;
+            }
+
+            if (faseActual >= jugadores.length) {
+                console.log('No hay jugador actual');
+                return;
+            }
+
+            // Marcar como votando INMEDIATAMENTE
+            votando = true;
+            miVoto = puntaje;
+
+            // Deshabilitar botones PRIMERO
+            const botones = document.querySelectorAll('.btn-voto');
+            botones.forEach((btn, i) => {
+                btn.disabled = true;
+                if (i + 1 === puntaje) btn.classList.add('seleccionado');
+            });
+
+            document.getElementById('esperando').style.display = 'block';
+
+            const jugadorActual = jugadores[faseActual];
+            console.log('Enviando voto para:', jugadorActual);
+
+            if (stompClient && stompClient.connected) {
+                stompClient.send('/app/votar-memoria/' + miSalaId, {}, JSON.stringify({
+                    username: miNombre,
+                    equipoVotado: jugadorActual,
+                    puntaje: puntaje
+                }));
+                console.log('Voto enviado OK');
+            } else {
+                console.error('WebSocket no conectado!');
+                // Revertir
+                votando = false;
+                miVoto = null;
+                botones.forEach(btn => btn.disabled = false);
+                alert('Error: WebSocket no conectado. Recarga la página.');
+            }
+        }
+
+        function procesarMensaje(data) {
+            console.log('Mensaje recibido:', data);
+
+            if (data.tipo === 'siguiente_fase_memoria') {
+                // Pasar al siguiente dibujo
+                console.log('Pasando a siguiente fase:', data.siguienteFase);
+                faseActual = data.siguienteFase;
+                miVoto = null;
+                votando = false; // Resetear flag
+                document.getElementById('esperando').style.display = 'none';
+                document.querySelectorAll('.btn-voto').forEach(btn => {
+                    btn.classList.remove('seleccionado');
+                    btn.disabled = false;
+                });
+                mostrarDibujoActual();
+                // Resetear contador de votos
+                document.getElementById('votosCount').textContent = '0';
+            }
+
+            if (data.tipo === 'voto_memoria_recibido') {
+                console.log('Voto recibido, votos actuales:', data.votosRecibidos);
+                // Actualizar contador de votos
+                document.getElementById('votosCount').textContent = data.votosRecibidos || 0;
+            }
+
+            if (data.tipo === 'resultado_memoria_final') {
+                document.getElementById('pantallaVotacion').style.display = 'none';
+                document.getElementById('pantallaResultado').classList.add('visible');
+                document.getElementById('puntajeRojo').textContent = data.puntajeRojo;
+                document.getElementById('puntajeAzul').textContent = data.puntajeAzul;
+
+                const banner = document.getElementById('ganadorBanner');
+                if (data.ganador === 'rojo') {
+                    banner.className = 'ganador-banner rojo';
+                    banner.innerHTML = '🏆 ¡Ganador: Equipo Rojo!';
+                } else if (data.ganador === 'azul') {
+                    banner.className = 'ganador-banner azul';
+                    banner.innerHTML = '🏆 ¡Ganador: Equipo Azul!';
+                } else {
+                    banner.className = 'ganador-banner empate';
+                    banner.innerHTML = '🤝 ¡Empate!';
+                }
+            }
+        }
+
+        function volverAlLobby() {
+            window.location.href = /*[[@{/lobby}]]*/ '/lobby';
+        }
+
+        // Iniciar
+        console.log('=== DEBUG resultado_memoria ===');
+        console.log('jugadores:', jugadores);
+        console.log('dibujos:', dibujos);
+        console.log('equipoRojo:', equipoRojo);
+        console.log('equipoAzul:', equipoAzul);
+        console.log('miSalaId:', miSalaId);
+        console.log('miNombre:', miNombre);
+
+        // Copiar dibujos a variable modificable
+        let dibujosActuales = { ...dibujos };
+
+        // Contar dibujos disponibles
+        function contarDibujos() {
+            let count = 0;
+            console.log('=== Contando dibujos ===');
+            console.log('Jugadores a verificar:', jugadores);
+            console.log('Dibujos disponibles:', Object.keys(dibujosActuales));
+
+            for (let j of jugadores) {
+                const tiene = dibujosActuales[j] && dibujosActuales[j].length > 100;
+                console.log('  -', j, ':', tiene ? '✅ tiene dibujo' : '❌ NO tiene');
+                if (tiene) count++;
+            }
+            console.log('Total con dibujo:', count, '/', jugadores.length);
+            return count;
+        }
+
+        // Actualizar dibujos desde el servidor
+        function actualizarDibujos() {
+            console.log('=== Polling dibujos ===');
+            fetch(/*[[@{/api/dibujos/}]]*/ '/api/dibujos/' + miSalaId)
+                .then(r => r.json())
+                .then(data => {
+                    console.log('Respuesta API:', data);
+                    if (data.dibujos) {
+                        dibujosActuales = data.dibujos;
+                        verificarYMostrar();
+                    } else {
+                        console.error('API no devolvió dibujos!');
+                        setTimeout(actualizarDibujos, 2000);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error cargando dibujos:', err);
+                    setTimeout(actualizarDibujos, 2000);
+                });
+        }
+
+        function verificarYMostrar() {
+            const dibujosDisponibles = contarDibujos();
+
+            if (dibujosDisponibles < jugadores.length) {
+                // Faltan dibujos, mostrar mensaje y reintentar
+                document.getElementById('faseInfo').innerHTML =
+                    '⏳ Esperando dibujos de todos los jugadores... <strong>' +
+                    dibujosDisponibles + '/' + jugadores.length + '</strong>';
+                setTimeout(actualizarDibujos, 2000); // Reintentar cada 2 seg
+            } else {
+                // Todos los dibujos listos, empezar votación
+                console.log('✅ Todos los dibujos disponibles! Iniciando votación...');
+                mostrarDibujoActual();
+            }
+        }
+
+        if (!jugadores || jugadores.length === 0) {
+            document.getElementById('faseInfo').textContent = '⚠️ Error: No se cargaron los jugadores';
+            console.error('No hay jugadores!');
+        } else {
+            verificarYMostrar();
+        }
+        conectar();
+    </script>
+</body>
+
+</html>

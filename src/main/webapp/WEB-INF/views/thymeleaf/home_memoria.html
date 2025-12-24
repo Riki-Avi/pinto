@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinto - Modo Memoria</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 5px;
+        }
+
+        .equipo-rojo {
+            background: linear-gradient(135deg, #ffe0e0, #ffcccc);
+            color: #c0392b;
+            border: 2px solid #e74c3c;
+        }
+
+        .equipo-azul {
+            background: linear-gradient(135deg, #e0e8ff, #ccd9ff);
+            color: #2980b9;
+            border: 2px solid #3498db;
+        }
+
+        .timer {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .timer.urgente {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            animation: pulso 0.5s infinite;
+        }
+
+        @keyframes pulso {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .fase-info {
+            font-size: 24px;
+            color: #764ba2;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        .imagen-container {
+            margin: 20px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+        }
+
+        .imagen-referencia {
+            max-width: 400px;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #canvas {
+            border: 3px solid #333;
+            border-radius: 15px;
+            background: white;
+            cursor: crosshair;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .controles {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+        }
+
+        input[type="color"] {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        input[type="range"] {
+            width: 120px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .btn-limpiar {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .oculto {
+            display: none !important;
+        }
+
+        /* Mensaje de transición */
+        .mensaje-fase {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 36px;
+            z-index: 1000;
+        }
+
+        .mensaje-fase.oculto {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🧠 Modo Memoria</h1>
+
+        <div>
+            <span class="badge" th:classappend="'equipo-' + ${equipo}">
+                <span th:text="${equipo == 'rojo'} ? '🔴 Equipo Rojo' : '🔵 Equipo Azul'">Equipo</span>
+            </span>
+            <span class="badge" style="background: #fff3cd; color: #856404; border: 2px solid #ffc107;">
+                👤 <span th:text="${username}">Jugador</span>
+            </span>
+        </div>
+
+        <div id="timer" class="timer">⏱️ 00:15</div>
+        <div id="faseInfo" class="fase-info">📷 ¡Memoriza la imagen!</div>
+
+        <!-- Fase 1: Ver imagen -->
+        <div id="faseMemorizar" class="imagen-container">
+            <h3>📷 Tienes 15 segundos para memorizar</h3>
+            <img th:src="@{/resources/images/{img}(img=${imagen})}" alt="Imagen a memorizar" class="imagen-referencia"
+                id="imagenRef">
+        </div>
+
+        <!-- Fase 2: Dibujar -->
+        <div id="faseDibujar" class="canvas-container oculto">
+            <canvas id="canvas" width="500" height="400"></canvas>
+            <div class="controles">
+                <label>🎨</label>
+                <input type="color" id="colorPicker" value="#000000">
+                <label>📏</label>
+                <input type="range" id="grosor" min="1" max="30" value="5">
+                <button class="btn btn-limpiar" onclick="limpiarCanvas()">🗑️ Limpiar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensaje de transición entre fases -->
+    <div id="mensajeFase" class="mensaje-fase oculto">
+        <div id="mensajeTexto">✏️ ¡A dibujar de memoria!</div>
+    </div>
+
+    <script th:inline="javascript">
+        const miNombre = /*[[${username}]]*/ 'Jugador';
+        const miSalaId = /*[[${salaId}]]*/ 'ABC123';
+        const miEquipo = /*[[${equipo}]]*/ 'rojo';
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const timerDiv = document.getElementById('timer');
+        const faseInfo = document.getElementById('faseInfo');
+
+        let fase = 1; // 1=memorizar, 2=dibujar
+        let tiempoRestante = 15;
+        let dibujando = false;
+
+        // Inicializar canvas blanco
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // ========== TIMER ==========
+        function actualizarTimer() {
+            const minutos = Math.floor(tiempoRestante / 60);
+            const segundos = tiempoRestante % 60;
+            timerDiv.textContent = '⏱️ ' +
+                String(minutos).padStart(2, '0') + ':' +
+                String(segundos).padStart(2, '0');
+
+            if (tiempoRestante <= 10 && fase === 1) {
+                timerDiv.classList.add('urgente');
+            }
+
+            if (tiempoRestante <= 0) {
+                if (fase === 1) {
+                    pasarAFase2();
+                } else {
+                    finalizarDibujo();
+                }
+                return;
+            }
+
+            tiempoRestante--;
+            setTimeout(actualizarTimer, 1000);
+        }
+
+        function pasarAFase2() {
+            fase = 2;
+            tiempoRestante = 90; // 1:30 minutos
+            timerDiv.classList.remove('urgente');
+
+            // Mostrar mensaje de transición
+            document.getElementById('mensajeFase').classList.remove('oculto');
+            document.getElementById('mensajeTexto').innerHTML = '✏️ ¡A dibujar de memoria!<br><small>Tienes 1:30 minutos</small>';
+
+            setTimeout(() => {
+                document.getElementById('mensajeFase').classList.add('oculto');
+                document.getElementById('faseMemorizar').classList.add('oculto');
+                document.getElementById('faseDibujar').classList.remove('oculto');
+                faseInfo.textContent = '✏️ ¡Dibuja lo que recuerdas!';
+                actualizarTimer();
+            }, 2000);
+        }
+
+        function finalizarDibujo() {
+            timerDiv.textContent = '⏱️ ¡Tiempo!';
+            faseInfo.textContent = '✅ ¡Terminado!';
+
+            const dibujoBase64 = canvas.toDataURL('image/png');
+
+            fetch(/*[[@{/guardar-dibujo-memoria}]]*/ '/guardar-dibujo-memoria', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    salaId: miSalaId,
+                    username: miNombre,
+                    equipo: miEquipo,
+                    dibujo: dibujoBase64
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Dibujo guardado:', data);
+                    setTimeout(() => {
+                        window.location.href = /*[[@{/resultado-memoria}]]*/ '/resultado-memoria';
+                    }, 1500);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    window.location.href = /*[[@{/resultado-memoria}]]*/ '/resultado-memoria';
+                });
+        }
+
+        // ========== DIBUJO ==========
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            if (e.touches) {
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            }
+            return { x: e.offsetX, y: e.offsetY };
+        }
+
+        canvas.addEventListener('mousedown', e => {
+            dibujando = true;
+            const pos = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        });
+
+        canvas.addEventListener('mousemove', e => {
+            if (!dibujando) return;
+            const pos = getPos(e);
+            ctx.strokeStyle = document.getElementById('colorPicker').value;
+            ctx.lineWidth = document.getElementById('grosor').value;
+            ctx.lineCap = 'round';
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+        });
+
+        canvas.addEventListener('mouseup', () => dibujando = false);
+        canvas.addEventListener('mouseleave', () => dibujando = false);
+
+        // Touch events
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            dibujando = true;
+            const pos = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        });
+
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if (!dibujando) return;
+            const pos = getPos(e);
+            ctx.strokeStyle = document.getElementById('colorPicker').value;
+            ctx.lineWidth = document.getElementById('grosor').value;
+            ctx.lineCap = 'round';
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+        });
+
+        canvas.addEventListener('touchend', () => dibujando = false);
+
+        function limpiarCanvas() {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Iniciar
+        actualizarTimer();
+    </script>
+</body>
+
+</html>
